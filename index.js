@@ -21,10 +21,15 @@ app.use(cors({
 
 // Set required headers for sheets to work properly
 app.use(function (req, res, next) {
+  // Remove X-Frame-Options to allow iframe embedding
+  res.removeHeader('X-Frame-Options');
+  
+  // Set CSP to allow intercom-sheets.com to embed our content
   res.setHeader(
     "Content-Security-Policy",
-    "frame-src 'self' https://intercom-sheets.com"
+    "frame-ancestors https://intercom-sheets.com https://*.intercom.io https://*.intercom.com"
   );
+  
   next();
 });
 
@@ -101,6 +106,10 @@ app.post("/sheet", (req, res) => {
     console.log("Headers:", JSON.stringify(req.headers, null, 2));
     console.log("Body type:", typeof req.body);
     console.log("Raw body:", req.body);
+    
+    // Explicitly remove X-Frame-Options and set proper headers for iframe
+    res.removeHeader('X-Frame-Options');
+    res.setHeader('Content-Security-Policy', "frame-ancestors https://intercom-sheets.com https://*.intercom.io https://*.intercom.com");
     
     // Handle different body formats
     let intercomData;
