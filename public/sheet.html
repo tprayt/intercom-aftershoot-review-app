@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,25 +89,40 @@
       cursor: pointer;
       z-index: 100;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      transition: background 0.2s ease;
+      transition: background 0.2s ease, opacity 0.2s ease;
     }
 
-    .close-button:hover {
+    .close-button:hover:not(:disabled) {
       background: #2980b9;
     }
 
-    .close-button:active {
+    .close-button:active:not(:disabled) {
       transform: scale(0.98);
+    }
+
+    .close-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .error-container {
       display: none;
       padding: 40px;
       text-align: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      z-index: 10;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .error-container.show {
-      display: block;
+      display: flex;
     }
 
     .error-icon {
@@ -133,8 +150,8 @@
       <div class="loading-text">Loading AfterShoot Review...</div>
     </div>
 
-    <!-- Error container -->
-    <div class="error-container" id="errorContainer">
+    <!-- Error container for sheet content -->
+    <div class="error-container" id="sheetErrorContainer">
       <div class="error-icon">⚠️</div>
       <div class="error-message">Unable to load review page</div>
       <div class="error-details">Please try again or contact support if the issue persists.</div>
@@ -154,93 +171,59 @@
   </div>
 
   <!-- Intercom Messenger Sheet Library - Load this FIRST -->
-  <script src="https://js.intercomcdn.com/messenger-sheet.latest.js"></script>
+
+  <!-- Intercom Messenger Sheet Library - Removed as per user request -->
 
   <script>
-    console.log('Sheet script starting...');
+    console.log('Sheet script starting (Intercom library ignored)...');
     
-    // Wait for the Intercom library to load
-    function waitForIntercomLibrary(callback) {
-      if (typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined') {
-        console.log('Intercom Sheet Library loaded successfully');
-        callback();
-      } else {
-        console.log('Waiting for Intercom Sheet Library...');
-        setTimeout(() => waitForIntercomLibrary(callback), 100);
-      }
-    }
-
-    // Initialize after library loads
-    waitForIntercomLibrary(() => {
-      // Set the sheet title in the Messenger
-      try {
-        INTERCOM_MESSENGER_SHEET_LIBRARY.setTitle('AfterShoot Review');
-        console.log('Sheet title set successfully');
-      } catch (e) {
-        console.error('Error setting title:', e);
-      }
-    });
-
     const iframe = document.getElementById('aftershoot-iframe');
     const loadingOverlay = document.getElementById('loadingOverlay');
-    const errorContainer = document.getElementById('errorContainer');
+    const sheetErrorContainer = document.getElementById('sheetErrorContainer');
     const closeButton = document.getElementById('closeButton');
 
-    // Hide loading overlay when iframe loads
+    // Enable close button by default as we are not waiting for an external library
+    closeButton.disabled = false; 
+
+    // Hide loading overlay when iframe loads successfully
     iframe.addEventListener('load', function() {
-      console.log('AfterShoot iframe loaded successfully');
+      console.log('AfterShoot iframe loaded successfully.');
       setTimeout(() => {
         loadingOverlay.classList.add('hidden');
-      }, 500);
+      }, 500); // Give a small delay for smoother transition
     });
 
     // Handle iframe load errors
     iframe.addEventListener('error', function() {
-      console.error('Failed to load AfterShoot iframe');
+      console.error('Failed to load AfterShoot iframe.');
       loadingOverlay.classList.add('hidden');
-      errorContainer.classList.add('show');
+      sheetErrorContainer.classList.add('show');
+      closeButton.disabled = true; // Disable button if iframe fails to load
     });
 
-    // Handle close button click
+    // Handle close button click - simply close the window
     closeButton.addEventListener('click', function() {
-      console.log('Close button clicked');
-      
-      if (typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined') {
-        try {
-          // Submit the sheet with any data you want to pass back
-          console.log('Submitting sheet...');
-          INTERCOM_MESSENGER_SHEET_LIBRARY.submitSheet({
-            action: 'closed',
-            timestamp: new Date().toISOString()
-          });
-          console.log('Sheet submitted successfully');
-        } catch (e) {
-          console.error('Error submitting sheet:', e);
-          // Fallback: try to close without submitting
-          try {
-            INTERCOM_MESSENGER_SHEET_LIBRARY.closeSheet();
-          } catch (e2) {
-            console.error('Error closing sheet:', e2);
-          }
-        }
-      } else {
-        console.error('Intercom Messenger Sheet Library not loaded');
-        // Fallback: just try to close the window
-        window.close();
-      }
+      console.log('Close button clicked. Attempting to close window.');
+      window.close();
     });
 
-    // Optional: Auto-hide loading after timeout
+    // Optional: Auto-hide loading after a longer timeout for the iframe itself
     setTimeout(() => {
       if (!loadingOverlay.classList.contains('hidden')) {
-        console.warn('Loading timeout - hiding overlay');
+        console.warn('Iframe loading timed out or encountered an issue. Hiding overlay and checking iframe state.');
         loadingOverlay.classList.add('hidden');
+        // If iframe still hasn't loaded (e.g., contentDocument is not ready), show error
+        if (!iframe.contentDocument || iframe.contentDocument.readyState === 'loading' || iframe.contentDocument.body.children.length === 0) {
+          sheetErrorContainer.classList.add('show');
+          closeButton.disabled = true;
+        }
       }
-    }, 10000);
+    }, 15000); // Give iframe a bit more time to load (15 seconds)
 
-    // Log when script is ready
-    console.log('Sheet script initialized');
-    console.log('Intercom Sheet Library available:', typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined');
+    console.log('Sheet script initialized (Intercom library ignored).');
   </script>
+        
 </body>
 </html>
+        
+        
