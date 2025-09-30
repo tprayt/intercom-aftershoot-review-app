@@ -26,8 +26,5 @@
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ],
-  "env": {
-    "CLIENT_SECRET": "@client-secret"
-  }
+  ]
 }
