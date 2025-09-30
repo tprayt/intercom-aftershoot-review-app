@@ -60,7 +60,7 @@ const initialCanvas = {
             type: "sheet",
             url: process.env.VERCEL_URL 
               ? `https://${process.env.VERCEL_URL}/sheet`
-              : "http://localhost:3000/sheet",
+              : "https://intercom-aftershoot-review-app.vercel.app/sheet",
           },
         },
       ],
@@ -92,15 +92,31 @@ app.post("/initialize", (request, response) => {
  */
 app.post("/sheet", (req, res) => {
   try {
-    const jsonParsed = JSON.parse(req.body.intercom_data);
+    console.log("Sheet endpoint called");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    
+    // Parse the intercom_data if it exists
+    let jsonParsed;
+    if (req.body.intercom_data) {
+      jsonParsed = JSON.parse(req.body.intercom_data);
+    } else {
+      jsonParsed = req.body;
+    }
+
     const encodedUser = jsonParsed.user;
+    console.log("Encoded user present:", !!encodedUser);
 
-    console.log("Sheet opened - Encoded user:", encodedUser);
-
-    // Decrypt user object to verify legitimate Intercom user
-    if (process.env.CLIENT_SECRET) {
-      let decodedUser = decodeUser(encodedUser);
-      console.log("Decoded user:", decodedUser);
+    // Decrypt user object to verify legitimate Intercom user (optional)
+    if (process.env.CLIENT_SECRET && encodedUser) {
+      try {
+        let decodedUser = decodeUser(encodedUser);
+        console.log("Decoded user:", decodedUser);
+      } catch (decodeError) {
+        console.error("Error decoding user:", decodeError);
+        // Continue anyway - decoding is optional for verification
+      }
+    } else {
+      console.log("Skipping user decryption - CLIENT_SECRET not set or user not provided");
     }
 
     // Send the sheet HTML file
