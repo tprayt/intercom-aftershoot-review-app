@@ -11,19 +11,26 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS configuration - allow all origins for sheets
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'X-Requested-With'],
+  credentials: true
+}));
+
 // Set required headers for sheets to work properly
 app.use(function (req, res, next) {
   res.setHeader(
     "Content-Security-Policy",
     "frame-src 'self' https://intercom-sheets.com"
   );
-  res.setHeader("X-Requested-With", "XMLHttpRequest");
   next();
 });
 
-app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.text({ type: 'application/x-www-form-urlencoded' }));
 
 app.use(express.static("public"));
 app.use(express.static(path.join(__dirname)));
@@ -58,9 +65,7 @@ const initialCanvas = {
           id: "open_review_button",
           action: {
             type: "sheet",
-            url: process.env.VERCEL_URL 
-              ? `https://${process.env.VERCEL_URL}/sheet`
-              : "https://intercom-aftershoot-review-app.vercel.app/sheet",
+            url: "https://intercom-aftershoot-review-app.vercel.app/sheet",
           },
         },
       ],
@@ -92,27 +97,43 @@ app.post("/initialize", (request, response) => {
  */
 app.post("/sheet", (req, res) => {
   try {
-    console.log("Sheet endpoint called");
-    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    console.log("=== Sheet endpoint called ===");
+    console.log("Headers:", JSON.stringify(req.headers, null, 2));
+    console.log("Body type:", typeof req.body);
+    console.log("Raw body:", req.body);
     
-    // Parse the intercom_data if it exists
-    let jsonParsed;
-    if (req.body.intercom_data) {
-      jsonParsed = JSON.parse(req.body.intercom_data);
+    // Handle different body formats
+    let intercomData;
+    if (typeof req.body === 'string') {
+      // If body is a string, try to parse it
+      const params = new URLSearchParams(req.body);
+      const intercomDataStr = params.get('intercom_data');
+      if (intercomDataStr) {
+        intercomData = JSON.parse(intercomDataStr);
+      }
+    } else if (req.body.intercom_data) {
+      // If body is already parsed
+      if (typeof req.body.intercom_data === 'string') {
+        intercomData = JSON.parse(req.body.intercom_data);
+      } else {
+        intercomData = req.body.intercom_data;
+      }
     } else {
-      jsonParsed = req.body;
+      intercomData = req.body;
     }
 
-    const encodedUser = jsonParsed.user;
+    console.log("Parsed intercom data:", JSON.stringify(intercomData, null, 2));
+
+    const encodedUser = intercomData?.user;
     console.log("Encoded user present:", !!encodedUser);
 
     // Decrypt user object to verify legitimate Intercom user (optional)
     if (process.env.CLIENT_SECRET && encodedUser) {
       try {
         let decodedUser = decodeUser(encodedUser);
-        console.log("Decoded user:", decodedUser);
+        console.log("Decoded user successfully");
       } catch (decodeError) {
-        console.error("Error decoding user:", decodeError);
+        console.error("Error decoding user:", decodeError.message);
         // Continue anyway - decoding is optional for verification
       }
     } else {
@@ -120,10 +141,11 @@ app.post("/sheet", (req, res) => {
     }
 
     // Send the sheet HTML file
+    console.log("Sending sheet.html");
     res.sendFile(path.join(__dirname, "public", "sheet.html"));
   } catch (error) {
     console.error("Error in sheet endpoint:", error);
-    res.status(500).send("Error loading sheet");
+    res.status(500).send("Error loading sheet: " + error.message);
   }
 });
 
@@ -132,7 +154,7 @@ app.post("/sheet", (req, res) => {
  * Returns a final canvas to display in the messenger
  */
 app.post("/submit-sheet", (req, res) => {
-  console.log("Sheet submitted:", req.body);
+  console.log("Sheet submitted:", JSON.stringify(req.body, null, 2));
 
   const finalCanvas = {
     canvas: {
