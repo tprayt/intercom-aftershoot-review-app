@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AfterShoot Review</title>
+  
+  <!-- Intercom Messenger Sheet Library - Required for sheets -->
+  <script src="https://js.intercomcdn.com/messenger-sheet.latest.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f5f5;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .iframe-container {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      background: white;
+    }
+
+    #aftershoot-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.3s ease;
+    }
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .close-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transition: background 0.2s ease;
+    }
+
+    .close-button:hover {
+      background: #2980b9;
+    }
+
+    .close-button:active {
+      transform: scale(0.98);
+    }
+
+    .error-container {
+      display: none;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .error-container.show {
+      display: block;
+    }
+
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+
+    .error-message {
+      color: #e74c3c;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .error-details {
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="iframe-container">
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading AfterShoot Review...</div>
+    </div>
+
+    <!-- Error container -->
+    <div class="error-container" id="errorContainer">
+      <div class="error-icon">⚠️</div>
+      <div class="error-message">Unable to load review page</div>
+      <div class="error-details">Please try again or contact support if the issue persists.</div>
+    </div>
+
+    <!-- Close button -->
+    <button class="close-button" id="closeButton">Done</button>
+
+    <!-- AfterShoot iframe -->
+    <iframe 
+      id="aftershoot-iframe"
+      src="https://account.aftershoot.com/review"
+      allow="fullscreen"
+      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+      title="AfterShoot Review Dashboard"
+    ></iframe>
+  </div>
+
+  <script>
+    // Set the sheet title in the Messenger
+    if (typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined') {
+      INTERCOM_MESSENGER_SHEET_LIBRARY.setTitle('AfterShoot Review');
+    }
+
+    const iframe = document.getElementById('aftershoot-iframe');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const errorContainer = document.getElementById('errorContainer');
+    const closeButton = document.getElementById('closeButton');
+
+    // Hide loading overlay when iframe loads
+    iframe.addEventListener('load', function() {
+      console.log('AfterShoot iframe loaded successfully');
+      setTimeout(() => {
+        loadingOverlay.classList.add('hidden');
+      }, 500);
+    });
+
+    // Handle iframe load errors
+    iframe.addEventListener('error', function() {
+      console.error('Failed to load AfterShoot iframe');
+      loadingOverlay.classList.add('hidden');
+      errorContainer.classList.add('show');
+    });
+
+    // Handle close button click
+    closeButton.addEventListener('click', function() {
+      console.log('Close button clicked');
+      
+      if (typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined') {
+        // Submit the sheet with any data you want to pass back
+        INTERCOM_MESSENGER_SHEET_LIBRARY.submitSheet({
+          action: 'closed',
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.error('Intercom Messenger Sheet Library not loaded');
+        // Fallback: just close the window
+        window.close();
+      }
+    });
+
+    // Optional: Auto-hide loading after timeout
+    setTimeout(() => {
+      if (!loadingOverlay.classList.contains('hidden')) {
+        console.warn('Loading timeout - hiding overlay');
+        loadingOverlay.classList.add('hidden');
+      }
+    }, 10000);
+
+    // Log when script is ready
+    console.log('Sheet script initialized');
+    console.log('Intercom Sheet Library available:', typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined');
+  </script>
+</body>
+</html>

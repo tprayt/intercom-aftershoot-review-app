@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/initialize",
+      "dest": "index.js",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/sheet",
+      "dest": "index.js",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/submit-sheet",
+      "dest": "index.js",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/(.*)",
+      "dest": "index.js"
+    }
+  ],
+  "env": {
+    "CLIENT_SECRET": "@client-secret"
+  }
+}
