@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AfterShoot Review</title>
   
-  <!-- Intercom Messenger Sheet Library - Required for sheets -->
-  <script src="https://js.intercomcdn.com/messenger-sheet.latest.js"></script>
-  
   <style>
     * {
       margin: 0;
@@ -156,11 +153,33 @@
     ></iframe>
   </div>
 
+  <!-- Intercom Messenger Sheet Library - Load this FIRST -->
+  <script src="https://js.intercomcdn.com/messenger-sheet.latest.js"></script>
+
   <script>
-    // Set the sheet title in the Messenger
-    if (typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined') {
-      INTERCOM_MESSENGER_SHEET_LIBRARY.setTitle('AfterShoot Review');
+    console.log('Sheet script starting...');
+    
+    // Wait for the Intercom library to load
+    function waitForIntercomLibrary(callback) {
+      if (typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined') {
+        console.log('Intercom Sheet Library loaded successfully');
+        callback();
+      } else {
+        console.log('Waiting for Intercom Sheet Library...');
+        setTimeout(() => waitForIntercomLibrary(callback), 100);
+      }
     }
+
+    // Initialize after library loads
+    waitForIntercomLibrary(() => {
+      // Set the sheet title in the Messenger
+      try {
+        INTERCOM_MESSENGER_SHEET_LIBRARY.setTitle('AfterShoot Review');
+        console.log('Sheet title set successfully');
+      } catch (e) {
+        console.error('Error setting title:', e);
+      }
+    });
 
     const iframe = document.getElementById('aftershoot-iframe');
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -187,14 +206,26 @@
       console.log('Close button clicked');
       
       if (typeof INTERCOM_MESSENGER_SHEET_LIBRARY !== 'undefined') {
-        // Submit the sheet with any data you want to pass back
-        INTERCOM_MESSENGER_SHEET_LIBRARY.submitSheet({
-          action: 'closed',
-          timestamp: new Date().toISOString()
-        });
+        try {
+          // Submit the sheet with any data you want to pass back
+          console.log('Submitting sheet...');
+          INTERCOM_MESSENGER_SHEET_LIBRARY.submitSheet({
+            action: 'closed',
+            timestamp: new Date().toISOString()
+          });
+          console.log('Sheet submitted successfully');
+        } catch (e) {
+          console.error('Error submitting sheet:', e);
+          // Fallback: try to close without submitting
+          try {
+            INTERCOM_MESSENGER_SHEET_LIBRARY.closeSheet();
+          } catch (e2) {
+            console.error('Error closing sheet:', e2);
+          }
+        }
       } else {
         console.error('Intercom Messenger Sheet Library not loaded');
-        // Fallback: just close the window
+        // Fallback: just try to close the window
         window.close();
       }
     });
