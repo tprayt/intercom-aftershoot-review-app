@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,20 +171,47 @@
     ></iframe>
   </div>
 
-  <!-- Intercom Messenger Sheet Library - Load this FIRST -->
 
-  <!-- Intercom Messenger Sheet Library - Removed as per user request -->
+  <!-- Intercom Messenger Sheet Library -->
+  <script src="https://app.intercom.com/js/messenger-sheet.js"></script>
+
 
   <script>
-    console.log('Sheet script starting (Intercom library ignored)...');
+    console.log('Sheet script starting...');
     
     const iframe = document.getElementById('aftershoot-iframe');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const sheetErrorContainer = document.getElementById('sheetErrorContainer');
     const closeButton = document.getElementById('closeButton');
 
-    // Enable close button by default as we are not waiting for an external library
-    closeButton.disabled = false; 
+    // Initially disable the close button until Intercom Messenger Sheet Library is confirmed loaded
+    closeButton.disabled = true;
+
+    /**
+     * Waits for the Intercom Messenger Sheet Library to be available and initializes it.
+     * Retries every 100ms until the library is found.
+     */
+    function initializeIntercomSheet() {
+      if (window.IntercomMessengerSheet) {
+        console.log('Intercom Messenger Sheet Library detected. Initializing...');
+        try {
+          // Set the sheet title in the Messenger
+          window.IntercomMessengerSheet.setTitle('AfterShoot Review');
+          console.log('Sheet title set successfully.');
+          closeButton.disabled = false; // Enable button once Intercom is ready
+        } catch (e) {
+          console.error('Error setting Intercom Sheet title:', e);
+          // If there's an error with Intercom, still enable the button for fallback window.close()
+          closeButton.disabled = false; 
+        }
+      } else {
+        console.log('Intercom Messenger Sheet Library not yet available. Retrying...');
+        setTimeout(initializeIntercomSheet, 100);
+      }
+    }
+
+    // Start checking for the Intercom library
+    initializeIntercomSheet();
 
     // Hide loading overlay when iframe loads successfully
     iframe.addEventListener('load', function() {
@@ -201,10 +229,29 @@
       closeButton.disabled = true; // Disable button if iframe fails to load
     });
 
-    // Handle close button click - simply close the window
+    // Handle close button click
     closeButton.addEventListener('click', function() {
-      console.log('Close button clicked. Attempting to close window.');
-      window.close();
+      console.log('Close button clicked.');
+      // Attempt to submit data and close the Intercom Messenger Sheet if the library is available
+      if (window.IntercomMessengerSheet && typeof window.IntercomMessengerSheet.submitSheet === 'function') {
+        console.log('Using IntercomMessengerSheet.submitSheet() to send data and close.');
+        // Example data to submit. This would typically come from user interactions in the sheet.
+        const submissionData = {
+          status: 'done',
+          timestamp: new Date().toISOString(),
+          // Add any other relevant data collected from the iframe or sheet here
+          message: 'Review completed by user.'
+        };
+        window.IntercomMessengerSheet.submitSheet(submissionData);
+      } else if (window.IntercomMessengerSheet && typeof window.IntercomMessengerSheet.closeSheet === 'function') {
+        console.log('IntercomMessengerSheet.submitSheet() not available, falling back to closeSheet().');
+        window.IntercomMessengerSheet.closeSheet();
+      } else {
+        // Fallback to window.close() if Intercom library is not present or method not found.
+        // Note: window.close() often only works for windows/tabs opened by script.
+        console.log('Intercom Messenger Sheet Library not available, falling back to window.close().');
+        window.close();
+      }
     });
 
     // Optional: Auto-hide loading after a longer timeout for the iframe itself
@@ -220,10 +267,13 @@
       }
     }, 15000); // Give iframe a bit more time to load (15 seconds)
 
-    console.log('Sheet script initialized (Intercom library ignored).');
+    console.log('Sheet script initialized.');
   </script>
+        
+        
         
 </body>
 </html>
+        
         
         
